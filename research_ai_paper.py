@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -20,23 +21,25 @@ st.subheader("📊 Dataset Overview")
 st.write(f"Shape: {data.shape}")
 st.dataframe(data.head())
 
-# Encode categorical
-le = LabelEncoder()
-for col in data.columns:
-    if data[col].dtype == 'object':
-        data[col] = le.fit_transform(data[col])
-
-# Features & Label
+# 🔥 STEP 1: Separate features & label FIRST (IMPORTANT)
 X = data.iloc[:, :-1]
 y = data.iloc[:, -1]
 
-# Binary classification
-y = y.apply(lambda x: 0 if x == 0 else 1)
+# 🔥 STEP 2: Proper binary conversion (CRITICAL FIX)
+y = y.apply(lambda x: 0 if str(x).lower() == 'normal' else 1)
 
-# Train model
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+# 🔥 STEP 3: Encode ONLY feature columns
+le = LabelEncoder()
+for col in X.columns:
+    if X[col].dtype == 'object':
+        X[col] = le.fit_transform(X[col])
 
-model = RandomForestClassifier(n_estimators=100)
+# Train model (fixed randomness)
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+model = RandomForestClassifier(n_estimators=100, random_state=42)
 model.fit(X_train, y_train)
 
 y_pred = model.predict(X_test)
@@ -46,7 +49,7 @@ st.success(f"✅ Model Accuracy: {acc:.2f}")
 
 st.markdown("---")
 
-# 🎯 SIDEBAR (LEFT PANEL)
+# 🎯 SIDEBAR
 st.sidebar.title("📊 Graph Controls")
 
 graph_option = st.sidebar.radio(
@@ -64,7 +67,7 @@ graph_option = st.sidebar.radio(
     ]
 )
 
-# 🎨 MAIN DISPLAY AREA
+# 🎨 MAIN DISPLAY
 st.header(f"📈 {graph_option}")
 
 # GRAPH DISPLAY
@@ -72,64 +75,72 @@ st.header(f"📈 {graph_option}")
 if graph_option == "Label Distribution":
     fig, ax = plt.subplots()
     sns.countplot(x=y, ax=ax)
+    ax.set_xticklabels(["Normal", "Attack"])
     st.pyplot(fig)
-    st.write("This graph shows the distribution of normal and attack traffic. It helps identify class imbalance, which is important for ensuring the model does not become biased toward one class.")
+    st.write("This graph shows the distribution of normal and attack traffic, helping identify class imbalance in the dataset.")
 
 elif graph_option == "Correlation Heatmap":
-    numeric_data = data.select_dtypes(include=['int64', 'float64'])
+    numeric_data = X.select_dtypes(include=[np.number])
+    corr_matrix = numeric_data.corr()
 
     fig, ax = plt.subplots(figsize=(10,5))
-    sns.heatmap(numeric_data.corr(), cmap='coolwarm', ax=ax)
+    sns.heatmap(corr_matrix, cmap='coolwarm', ax=ax)
     st.pyplot(fig)
-    st.write("The heatmap represents correlations between features. Strong correlations indicate relationships, while weaker ones show independence, helping in feature selection and improving model performance.")
+    st.write("The heatmap represents correlations between features, helping identify relationships and important variables.")
 
 elif graph_option == "Confusion Matrix":
     cm = confusion_matrix(y_test, y_pred)
     fig, ax = plt.subplots()
-    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', ax=ax)
+    sns.heatmap(
+        cm, annot=True, fmt='d', cmap='Blues',
+        xticklabels=['Normal', 'Attack'],
+        yticklabels=['Normal', 'Attack'],
+        ax=ax
+    )
     ax.set_title("Confusion Matrix")
-    ax.set_xlabel("Predicted Label")
-    ax.set_ylabel("Actual Label")
+    ax.set_xlabel("Predicted")
+    ax.set_ylabel("Actual")
 
     st.pyplot(fig)
-    st.write("Confusion matrix compares predicted and actual values. It helps evaluate model accuracy and shows how well the system detects intrusions and normal traffic.")
+    st.write("Confusion matrix evaluates model performance by comparing actual and predicted classifications.")
 
 elif graph_option == "Feature Importance":
     importances = model.feature_importances_
     fig, ax = plt.subplots()
     ax.bar(range(len(importances)), importances)
+    ax.set_title("Feature Importance")
     st.pyplot(fig)
-    st.write("Feature importance graph shows which features contribute most to predictions. It helps optimize the model by focusing on key attributes.")
+    st.write("This graph shows which features contribute most to intrusion detection.")
 
 elif graph_option == "Histogram":
-    fig, ax = plt.subplots()
-    data.hist(ax=ax)
-    st.pyplot(fig)
-    st.write("Histograms display the distribution of feature values, helping identify patterns, skewness, and data spread useful for machine learning.")
+    fig = data.hist(figsize=(10,8))
+    st.pyplot(plt.gcf())
+    st.write("Histograms display feature distributions, helping understand data patterns.")
 
 elif graph_option == "Box Plot":
     fig, ax = plt.subplots()
-    sns.boxplot(data=data.iloc[:, :5], ax=ax)
+    sns.boxplot(data=X.iloc[:, :5], ax=ax)
     st.pyplot(fig)
-    st.write("Box plots highlight outliers and anomalies in data. These unusual values can indicate potential intrusions or abnormal behavior.")
+    st.write("Box plots highlight outliers and anomalies in the dataset.")
 
 elif graph_option == "Scatter Plot":
     fig, ax = plt.subplots()
-    ax.scatter(data.iloc[:,0], data.iloc[:,1])
+    ax.scatter(X.iloc[:,0], X.iloc[:,1])
+    ax.set_title("Scatter Plot")
     st.pyplot(fig)
-    st.write("Scatter plot shows relationships between two features and helps visualize clustering between normal and attack data.")
+    st.write("Scatter plot shows relationships between two features.")
 
 elif graph_option == "Count Plot":
     fig, ax = plt.subplots()
-    sns.countplot(x=data.iloc[:,0], ax=ax)
+    sns.countplot(x=X.iloc[:,0], ax=ax)
     st.pyplot(fig)
-    st.write("Count plot shows frequency of categorical values, helping understand which values occur most frequently.")
+    st.write("Count plot shows frequency of feature values.")
 
 elif graph_option == "Distribution Plot":
     fig, ax = plt.subplots()
-    sns.kdeplot(data.iloc[:,0], ax=ax)
+    sns.kdeplot(X.iloc[:,0], ax=ax)
     st.pyplot(fig)
-    st.write("Distribution plot shows probability density of a feature, helping understand how data is spread across values.")
+    st.write("Distribution plot shows the density of feature values.")
 
 st.markdown("---")
 st.info("📌 This system uses Machine Learning to detect and analyze network intrusions effectively.")
