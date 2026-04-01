@@ -84,7 +84,9 @@ elif graph_option == "Correlation Heatmap":
 elif graph_option == "Confusion Matrix":
     cm = confusion_matrix(y_test, y_pred)
     fig, ax = plt.subplots()
-    sns.heatmap(cm, annot=True, fmt='d', ax=ax)
+    numeric_data = data.select_dtypes(include=['int64', 'float64'])
+    fig, ax = plt.subplots(figsize=(10,5))
+    sns.heatmap(numeric_data.corr(), cmap='coolwarm', ax=ax)
     st.pyplot(fig)
     st.write("Confusion matrix compares predicted and actual values. It helps evaluate model accuracy and shows how well the system detects intrusions and normal traffic.")
 
