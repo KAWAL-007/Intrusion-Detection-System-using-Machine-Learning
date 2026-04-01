@@ -76,12 +76,10 @@ if graph_option == "Label Distribution":
     st.write("This graph shows the distribution of normal and attack traffic. It helps identify class imbalance, which is important for ensuring the model does not become biased toward one class.")
 
 elif graph_option == "Correlation Heatmap":
-    numeric_data = data.select_dtypes(include=['number']).copy()
-    numeric_data = numeric_data.replace([np.inf, -np.inf], np.nan).dropna(axis=1, how='all')
-    corr_matrix = numeric_data.corr()
+    numeric_data = data.select_dtypes(include=['int64', 'float64'])
 
     fig, ax = plt.subplots(figsize=(10,5))
-    sns.heatmap(corr_matrix, cmap='coolwarm', ax=ax)
+    sns.heatmap(numeric_data.corr(), cmap='coolwarm', ax=ax)
     st.pyplot(fig)
     st.write("The heatmap represents correlations between features. Strong correlations indicate relationships, while weaker ones show independence, helping in feature selection and improving model performance.")
 
