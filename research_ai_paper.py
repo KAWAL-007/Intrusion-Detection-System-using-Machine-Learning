@@ -76,17 +76,23 @@ if graph_option == "Label Distribution":
     st.write("This graph shows the distribution of normal and attack traffic. It helps identify class imbalance, which is important for ensuring the model does not become biased toward one class.")
 
 elif graph_option == "Correlation Heatmap":
+    numeric_data = data.select_dtypes(include=['number']).copy()
+    numeric_data = numeric_data.replace([np.inf, -np.inf], np.nan).dropna(axis=1, how='all')
+    corr_matrix = numeric_data.corr()
+
     fig, ax = plt.subplots(figsize=(10,5))
-    sns.heatmap(data.corr(), cmap='coolwarm', ax=ax)
+    sns.heatmap(corr_matrix, cmap='coolwarm', ax=ax)
     st.pyplot(fig)
     st.write("The heatmap represents correlations between features. Strong correlations indicate relationships, while weaker ones show independence, helping in feature selection and improving model performance.")
 
 elif graph_option == "Confusion Matrix":
     cm = confusion_matrix(y_test, y_pred)
     fig, ax = plt.subplots()
-    numeric_data = data.select_dtypes(include=['int64', 'float64'])
-    fig, ax = plt.subplots(figsize=(10,5))
-    sns.heatmap(numeric_data.corr(), cmap='coolwarm', ax=ax)
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', ax=ax)
+    ax.set_title("Confusion Matrix")
+    ax.set_xlabel("Predicted Label")
+    ax.set_ylabel("Actual Label")
+
     st.pyplot(fig)
     st.write("Confusion matrix compares predicted and actual values. It helps evaluate model accuracy and shows how well the system detects intrusions and normal traffic.")
 
