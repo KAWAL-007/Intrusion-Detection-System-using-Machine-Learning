@@ -12,7 +12,7 @@ from sklearn.metrics import accuracy_score, confusion_matrix
 # Page config
 st.set_page_config(page_title="IDS Dashboard", layout="wide")
 
-st.title("🔐 Intrusion Detection System using Machine Learning")
+st.title("🔐 Intrusion Detection System")
 
 # Load dataset
 data = pd.read_csv("nsl_kdd_dataset.csv")
