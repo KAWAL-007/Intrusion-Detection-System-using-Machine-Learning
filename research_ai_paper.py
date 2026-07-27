@@ -45,7 +45,6 @@ model.fit(X_train, y_train)
 y_pred = model.predict(X_test)
 acc = accuracy_score(y_test, y_pred)
 
-st.success(f"✅ Model Accuracy: {acc:.2f}")
 
 st.markdown("---")
 
